@@ -43,6 +43,7 @@
 ADC_HandleTypeDef hadc1;
 
 UART_HandleTypeDef huart2;
+DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
 
@@ -51,10 +52,11 @@ UART_HandleTypeDef huart2;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
-
+void DMATransferComplete(DMA_HandleTypeDef *hdma);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -69,11 +71,10 @@ static void MX_ADC1_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  int i=0;
-  uint16_t adc_value[5]={0};
-  uint32_t adc_average=0;
-  char adc_value_tab[30]={0};
-  char adc_average_tab[40]={0};
+  char msg_l[]=	"Ce message est un long message pour le test du DMA1.\r\n" \
+				"Nous utilisons le DMA1 sur le périphérique USART2 TX.\r\n" \
+				"L'objectif est de faire un code simple qui explicite\r\n" \
+				"le fonctionement du DMA1 pour un novice comme moi.\r\n\n";
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -94,53 +95,31 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_DMA_RegisterCallback(&hdma_usart2_tx, HAL_DMA_XFER_CPLT_CB_ID, &DMATransferComplete);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  for(i=0;i<5;i++)
-	  {
-		  // Test: Set GPIO pin high
-		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+	// Set the UART CR3 register = DMA mode is enabled for transmission
+	huart2.Instance->CR3 |= USART_CR3_DMAT;
 
-		  // Get ADV value
-		  HAL_ADC_Start(&hadc1);
-		  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-		  adc_value[i] = HAL_ADC_GetValue(&hadc1);
+	// LD2 ON
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 
-		  // Test: Set GPIO pin low
-		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+	// Start IT for DMA USART2 TX
+	HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg_l,(uint32_t)&huart2.Instance->TDR, strlen(msg_l));
 
-		  // Convert to string and print
-		  sprintf(adc_value_tab, "ADC values n°%hu = %hu\r\n", (i+1), adc_value[i]);
+	// Wait a second
+	HAL_Delay(1000);
 
-		  adc_average += adc_value[i];
-
-		  // UART transmit adc value
-		  HAL_UART_Transmit(&huart2, (uint8_t*)adc_value_tab, strlen(adc_value_tab), HAL_MAX_DELAY);
-
-		  if(i==4)
-		  {
-			  adc_average /= 5;
-
-			  // Convert to string and print
-			  sprintf(adc_average_tab, "Average of the last 5 elements = %hu\r\n\n", (uint16_t)adc_average);
-
-			  // UART transmit adc average
-			  HAL_UART_Transmit(&huart2, (uint8_t*)adc_average_tab, strlen(adc_average_tab), HAL_MAX_DELAY);
-
-			  adc_average = 0;
-		  }
-
-		  // Wait during 1s
-		  HAL_Delay(1000);
-	  }
+	// LD2 OFF
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -300,6 +279,22 @@ static void MX_USART2_UART_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -337,7 +332,14 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void DMATransferComplete(DMA_HandleTypeDef *hdma)
+{
+	// Reset the UART CR3 register = DMA mode is disabled for transmission
+	huart2.Instance->CR3 &=~ USART_CR3_DMAT;
 
+	// LD2 OFF
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+}
 /* USER CODE END 4 */
 
 /**
