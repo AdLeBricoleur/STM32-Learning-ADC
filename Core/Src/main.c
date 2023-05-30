@@ -125,9 +125,6 @@ int main(void)
 		  // UART transmit adc value
 		  HAL_UART_Transmit(&huart2, (uint8_t*)adc_value_tab, strlen(adc_value_tab), HAL_MAX_DELAY);
 
-		  // Wait during 1s
-		  HAL_Delay(1000);
-
 		  if(i==4)
 		  {
 			  adc_average /= 5;
@@ -140,6 +137,9 @@ int main(void)
 
 			  adc_average = 0;
 		  }
+
+		  // Wait during 1s
+		  HAL_Delay(1000);
 	  }
     /* USER CODE END WHILE */
 
