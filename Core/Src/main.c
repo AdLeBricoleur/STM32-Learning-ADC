@@ -72,10 +72,8 @@ int main(void)
   int i=0;
   uint16_t adc_value[5]={0};
   uint32_t adc_average=0;
-  char adc_value_tab[10]={0};
-  char adc_average_tab[10]={0};
-  char msg_init[]={"ADC values n°"};
-  char msg_average[]={"Average of the last 5 elements = "};
+  char adc_value_tab[30]={0};
+  char adc_average_tab[40]={0};
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -108,9 +106,6 @@ int main(void)
   {
 	  for(i=0;i<5;i++)
 	  {
-		  // UART transmit msg init
-		  HAL_UART_Transmit(&huart2, (uint8_t*)msg_init, strlen(msg_init), HAL_MAX_DELAY);
-
 		  // Test: Set GPIO pin high
 		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 
@@ -123,7 +118,7 @@ int main(void)
 		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 
 		  // Convert to string and print
-		  sprintf(adc_value_tab, "%hu = %hu\r\n", (i+1), adc_value[i]);
+		  sprintf(adc_value_tab, "ADC values n°%hu = %hu\r\n", (i+1), adc_value[i]);
 
 		  adc_average += adc_value[i];
 
@@ -135,13 +130,10 @@ int main(void)
 
 		  if(i==4)
 		  {
-			  // UART transmit msg average
-			  HAL_UART_Transmit(&huart2, (uint8_t*)msg_average, strlen(msg_average), HAL_MAX_DELAY);
-
 			  adc_average /= 5;
 
 			  // Convert to string and print
-			  sprintf(adc_average_tab, "%hu\r\n\n", (uint16_t)adc_average);
+			  sprintf(adc_average_tab, "Average of the last 5 elements = %hu\r\n\n", (uint16_t)adc_average);
 
 			  // UART transmit adc average
 			  HAL_UART_Transmit(&huart2, (uint8_t*)adc_average_tab, strlen(adc_average_tab), HAL_MAX_DELAY);
