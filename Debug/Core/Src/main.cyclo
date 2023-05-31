@@ -1,8 +1,9 @@
 main.c:71:5:main	1
-main.c:134:6:SystemClock_Config	4
-main.c:184:13:MX_ADC1_Init	4
-main.c:251:13:MX_USART2_UART_Init	2
-main.c:284:13:MX_DMA_Init	1
-main.c:302:13:MX_GPIO_Init	1
-main.c:335:6:DMATransferComplete	1
-main.c:349:6:Error_Handler	1
+main.c:117:6:SystemClock_Config	4
+main.c:167:13:MX_ADC1_Init	4
+main.c:234:13:MX_USART2_UART_Init	2
+main.c:267:13:MX_DMA_Init	1
+main.c:285:13:MX_GPIO_Init	1
+main.c:319:6:HAL_ADC_ConvHalfCpltCallback	1
+main.c:326:6:HAL_ADC_ConvCpltCallback	1
+main.c:337:6:Error_Handler	1
